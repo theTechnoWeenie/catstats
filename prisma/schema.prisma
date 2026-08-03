@@ -1,0 +1,51 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Cat {
+  id       String    @id @default(cuid())
+  name     String
+  feedings Feeding[]
+  dayNotes DayNote[]
+}
+
+enum MealSlot {
+  OVERNIGHT // 00:00–06:59
+  BREAKFAST // 07:00–10:59
+  LUNCH // 11:00–15:59
+  DINNER // 16:00–20:59
+  EVENING // 21:00–23:59
+}
+
+model Feeding {
+  id        String   @id @default(cuid())
+  cat       Cat      @relation(fields: [catId], references: [id], onDelete: Cascade)
+  catId     String
+  day       String // "YYYY-MM-DD", local server time — a calendar bucket, not a timestamp
+  mealSlot  MealSlot
+  amount    Float // mL; incremented in place on repeated logs for the same (cat, day, slot)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([catId, day, mealSlot])
+}
+
+model DayNote {
+  id    String @id @default(cuid())
+  cat   Cat    @relation(fields: [catId], references: [id], onDelete: Cascade)
+  catId String
+  day   String // "YYYY-MM-DD"
+  notes String
+
+  @@unique([catId, day])
+}

@@ -1,0 +1,10 @@
+services:
+  catstats:
+    build: .
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./data:/data
+    environment:
+      - DATABASE_URL=file:/data/catstats.db
+    restart: unless-stopped
