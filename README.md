@@ -60,6 +60,13 @@ This builds the image, starts the container, and persists the database to
 container runs `prisma migrate deploy` against the mounted database before
 the server starts, so schema updates apply automatically on restart.
 
+Meal time-of-day slots (Overnight/Breakfast/Lunch/Dinner/Evening) and day
+boundaries are resolved using the container's local time, so set the `TZ`
+environment variable to your local IANA timezone (e.g. `America/Chicago`)
+in `docker-compose.yml` or via `docker run -e TZ=...` — otherwise feedings
+logged near a slot boundary may land in the wrong bucket. Defaults to
+`America/Chicago` if unset.
+
 To build and run without compose:
 
 ```bash

@@ -7,4 +7,5 @@ services:
       - ./data:/data
     environment:
       - DATABASE_URL=file:/data/catstats.db
+      - TZ=America/Chicago
     restart: unless-stopped

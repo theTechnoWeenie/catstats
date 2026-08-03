@@ -15,10 +15,12 @@ RUN npm run build
 
 FROM node:20-alpine AS runtime
 WORKDIR /app
+RUN apk add --no-cache tzdata
 ENV NODE_ENV=production
 ENV DATABASE_URL="file:/data/catstats.db"
 ENV PORT=9090
 ENV HOSTNAME="0.0.0.0"
+ENV TZ="America/Chicago"
 
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
