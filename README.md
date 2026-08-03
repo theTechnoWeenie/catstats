@@ -67,6 +67,24 @@ docker build -t catstats .
 docker run -d -p 9090:9090 -v $(pwd)/data:/data catstats
 ```
 
+### Pulling the pre-built image
+
+A GitHub Actions workflow (`.github/workflows/docker-publish.yml`) builds and
+publishes a multi-arch (`linux/amd64`, `linux/arm64`) image to the GitHub
+Container Registry on every push to `main` and on version tags (`vX.Y.Z`).
+No local build is required on the NAS:
+
+```bash
+docker run -d -p 9090:9090 -v $(pwd)/data:/data \
+  ghcr.io/thetechnoweenie/catstats:latest
+```
+
+Or point `docker-compose.yml`'s `build: .` at `image:
+ghcr.io/thetechnoweenie/catstats:latest` instead to use `docker compose pull`
++ `docker compose up -d` for updates. Available tags: `latest` (tip of
+`main`), `<version>`/`<major>.<minor>` (from git tags), and the short commit
+SHA.
+
 ## A note on how this was built
 
 This project — including a fair amount of the application code, the Docker
