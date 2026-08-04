@@ -1,16 +1,37 @@
 import { prisma } from "@/lib/prisma";
 import { AuditTable } from "./audit-table";
+import { Pagination } from "./pagination";
 
 export const dynamic = "force-dynamic";
 
-export default async function AuditLogPage() {
-  const [feedings, cats] = await Promise.all([
-    prisma.feeding.findMany({
-      orderBy: { updatedAt: "desc" },
-      include: { cat: true },
-    }),
+const PAGE_SIZE = 15;
+
+export default async function AuditLogPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { page: pageParam } = await searchParams;
+  const requestedPage = Number(pageParam);
+  const page =
+    Number.isFinite(requestedPage) && requestedPage > 0
+      ? Math.floor(requestedPage)
+      : 1;
+
+  const [totalCount, cats] = await Promise.all([
+    prisma.feeding.count(),
     prisma.cat.findMany({ orderBy: { name: "asc" } }),
   ]);
+
+  const pageCount = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+
+  const feedings = await prisma.feeding.findMany({
+    orderBy: { updatedAt: "desc" },
+    include: { cat: true },
+    skip: (currentPage - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
+  });
 
   return (
     <div className="min-h-screen bg-zinc-50 font-sans dark:bg-black">
@@ -19,6 +40,7 @@ export default async function AuditLogPage() {
           Audit Log
         </h1>
         <AuditTable feedings={feedings} cats={cats} />
+        <Pagination currentPage={currentPage} pageCount={pageCount} />
       </main>
     </div>
   );
