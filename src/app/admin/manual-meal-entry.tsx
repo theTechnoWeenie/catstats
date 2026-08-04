@@ -5,9 +5,11 @@ import { useState } from "react";
 import type { Cat } from "@/generated/prisma/browser";
 import { MEAL_SLOT_LABELS, MEAL_SLOTS } from "@/lib/meal-slots";
 import { todayString } from "@/lib/day";
+import { useToast } from "@/components/toast";
 
 export function ManualMealEntry({ cats }: { cats: Cat[] }) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [catId, setCatId] = useState(cats[0]?.id ?? "");
   const [day, setDay] = useState(todayString());
   const [mealSlot, setMealSlot] = useState(MEAL_SLOTS[0]);
@@ -38,9 +40,13 @@ export function ManualMealEntry({ cats }: { cats: Cat[] }) {
       });
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
-        setError(body.error ?? "Failed to log feeding.");
+        const message = body.error ?? "Failed to log feeding.";
+        setError(message);
+        showToast(message, "error");
         return;
       }
+      const catName = cats.find((cat) => cat.id === catId)?.name ?? "cat";
+      showToast(`Logged ${parsedAmount} mL for ${catName}.`);
       setAmount("");
       router.refresh();
     } finally {

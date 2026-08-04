@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Cat } from "@/generated/prisma/browser";
 import { MEAL_SLOT_LABELS } from "@/lib/meal-slots";
+import { useToast } from "@/components/toast";
 
 type FeedingRow = {
   id: string;
@@ -23,6 +24,7 @@ export function AuditTable({
   cats: Cat[];
 }) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState("");
   const [editCatId, setEditCatId] = useState("");
@@ -51,11 +53,14 @@ export function AuditTable({
 
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
-      setEditError(body.error ?? "Failed to update.");
+      const message = body.error ?? "Failed to update.";
+      setEditError(message);
+      showToast(message, "error");
       return;
     }
 
     setEditingId(null);
+    showToast("Feeding updated.");
     router.refresh();
   }
 
