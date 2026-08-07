@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
   await prisma.$transaction([
     prisma.feeding.deleteMany(),
     prisma.dayNote.deleteMany(),
+    prisma.pillLog.deleteMany(),
     prisma.cat.deleteMany(),
   ]);
 

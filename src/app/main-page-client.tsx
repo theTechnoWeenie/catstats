@@ -16,6 +16,8 @@ type FeedingRow = {
 
 type SlotAverage = { mealSlot: string; average: number };
 
+type PillLog = { am: boolean; pm: boolean };
+
 function toAmountMap(rows: FeedingRow[]): Map<string, number> {
   return new Map(rows.map((row) => [row.mealSlot, row.amount]));
 }
@@ -36,6 +38,12 @@ async function fetchAverages(catId: string): Promise<SlotAverage[]> {
   return response.ok ? response.json() : [];
 }
 
+async function fetchPillLog(catId: string, day: string): Promise<PillLog> {
+  const response = await fetch(`/api/pill-log?catId=${catId}&day=${day}`);
+  const body = response.ok ? await response.json() : { am: false, pm: false };
+  return { am: Boolean(body.am), pm: Boolean(body.pm) };
+}
+
 export function MainPageClient({ cats }: { cats: Cat[] }) {
   const [catId, setCatId] = useState(cats[0].id);
   const [selectedDay, setSelectedDay] = useState(todayString());
@@ -47,6 +55,9 @@ export function MainPageClient({ cats }: { cats: Cat[] }) {
   const [trendAverages, setTrendAverages] = useState<SlotAverage[]>([]);
   const [notes, setNotes] = useState("");
   const [notesSaving, setNotesSaving] = useState(false);
+
+  const [pillLog, setPillLog] = useState<PillLog>({ am: false, pm: false });
+  const [pillSaving, setPillSaving] = useState(false);
 
   const [amount, setAmount] = useState("");
   const [logError, setLogError] = useState<string | null>(null);
@@ -61,6 +72,9 @@ export function MainPageClient({ cats }: { cats: Cat[] }) {
     });
     fetchNotes(catId, selectedDay).then((value) => {
       if (!cancelled) setNotes(value);
+    });
+    fetchPillLog(catId, selectedDay).then((value) => {
+      if (!cancelled) setPillLog(value);
     });
     return () => {
       cancelled = true;
@@ -118,6 +132,21 @@ export function MainPageClient({ cats }: { cats: Cat[] }) {
       });
     } finally {
       setNotesSaving(false);
+    }
+  }
+
+  async function handleTogglePill(field: "am" | "pm") {
+    const next = { ...pillLog, [field]: !pillLog[field] };
+    setPillLog(next);
+    setPillSaving(true);
+    try {
+      await fetch("/api/pill-log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ catId, day: selectedDay, ...next }),
+      });
+    } finally {
+      setPillSaving(false);
     }
   }
 
@@ -213,11 +242,13 @@ export function MainPageClient({ cats }: { cats: Cat[] }) {
         prevDayLabel={prevDay}
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-black/[.08] p-4 text-sm dark:border-white/[.145]">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="rounded-xl border border-black/[.08] p-4 text-sm dark:border-white/[.145] lg:col-span-2">
           <div className="flex gap-6">
             <div>
-              <p className="text-zinc-500 dark:text-zinc-400">Total consumed</p>
+              <p className="text-zinc-500 dark:text-zinc-400">
+                {showPrevDay ? "Total" : "Total consumed"}
+              </p>
               <p className="flex items-center gap-1.5 text-2xl font-semibold">
                 {totalMl.toFixed(0)} mL
                 <span
@@ -254,7 +285,7 @@ export function MainPageClient({ cats }: { cats: Cat[] }) {
             )}
           </div>
         </div>
-        <div className="rounded-xl border border-black/[.08] p-4 dark:border-white/[.145]">
+        <div className="rounded-xl border border-black/[.08] p-4 dark:border-white/[.145] lg:col-span-2">
           <label className="text-sm text-zinc-500 dark:text-zinc-400" htmlFor="day-notes">
             Notes for {selectedDay}
           </label>
@@ -267,6 +298,28 @@ export function MainPageClient({ cats }: { cats: Cat[] }) {
             className="mt-2 w-full resize-none rounded-md border border-black/[.08] bg-transparent px-3 py-2 text-sm dark:border-white/[.145]"
           />
           {notesSaving && <p className="mt-1 text-xs text-zinc-400">Saving…</p>}
+        </div>
+        <div className="rounded-xl border border-black/[.08] p-4 dark:border-white/[.145]">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Pills</p>
+          <div className="mt-2 flex flex-col gap-2">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={pillLog.am}
+                onChange={() => handleTogglePill("am")}
+              />
+              AM
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={pillLog.pm}
+                onChange={() => handleTogglePill("pm")}
+              />
+              PM
+            </label>
+          </div>
+          {pillSaving && <p className="mt-1 text-xs text-zinc-400">Saving…</p>}
         </div>
       </div>
 

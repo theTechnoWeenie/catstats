@@ -17,6 +17,7 @@ model Cat {
   name     String
   feedings Feeding[]
   dayNotes DayNote[]
+  pillLogs PillLog[]
 }
 
 enum MealSlot {
@@ -46,6 +47,17 @@ model DayNote {
   catId String
   day   String // "YYYY-MM-DD"
   notes String
+
+  @@unique([catId, day])
+}
+
+model PillLog {
+  id    String  @id @default(cuid())
+  cat   Cat     @relation(fields: [catId], references: [id], onDelete: Cascade)
+  catId String
+  day   String // "YYYY-MM-DD"
+  am    Boolean @default(false)
+  pm    Boolean @default(false)
 
   @@unique([catId, day])
 }
