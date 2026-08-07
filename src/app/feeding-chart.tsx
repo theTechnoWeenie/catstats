@@ -50,6 +50,15 @@ export function FeedingChart({
   showTrend: boolean;
   prevDayLabel: string;
 }) {
+  const rawMax = data.reduce((max, datum) => {
+    const values = [datum.selectedDay, datum.prevDay, datum.trend].filter(
+      (value): value is number => value !== undefined
+    );
+    return Math.max(max, ...values);
+  }, 0);
+  const yAxisMax = Math.max(5, Math.ceil(rawMax / 5) * 5);
+  const yAxisTicks = Array.from({ length: yAxisMax / 5 + 1 }, (_, i) => i * 5);
+
   return (
     <div className="h-72 w-full rounded-xl border border-black/[.08] bg-[var(--chart-surface)] p-4 dark:border-white/[.145]">
       <ResponsiveContainer width="100%" height="100%">
@@ -62,6 +71,9 @@ export function FeedingChart({
             tickLine={false}
           />
           <YAxis
+            domain={[0, yAxisMax]}
+            ticks={yAxisTicks}
+            allowDecimals={false}
             tick={{ fill: "var(--chart-text-secondary)", fontSize: 12 }}
             axisLine={{ stroke: "var(--chart-axis)" }}
             tickLine={false}

@@ -68,7 +68,6 @@ export function MainPageClient({ cats }: { cats: Cat[] }) {
   }, [catId, selectedDay]);
 
   useEffect(() => {
-    if (!showPrevDay) return;
     let cancelled = false;
     fetchFeedings(catId, prevDay).then((rows) => {
       if (!cancelled) setPrevDayFeedings(rows);
@@ -76,7 +75,7 @@ export function MainPageClient({ cats }: { cats: Cat[] }) {
     return () => {
       cancelled = true;
     };
-  }, [catId, prevDay, showPrevDay]);
+  }, [catId, prevDay]);
 
   useEffect(() => {
     if (!showTrend) return;
@@ -103,6 +102,11 @@ export function MainPageClient({ cats }: { cats: Cat[] }) {
 
   const totalMl = selectedDayFeedings.reduce((sum, row) => sum + row.amount, 0);
   const calories = calorieRange(totalMl);
+
+  const prevTotalMl = prevDayFeedings.reduce((sum, row) => sum + row.amount, 0);
+  const prevCalories = calorieRange(prevTotalMl);
+  const trendVsPrevDay: "up" | "down" | "similar" =
+    Math.abs(totalMl - prevTotalMl) <= 5 ? "similar" : totalMl > prevTotalMl ? "up" : "down";
 
   async function handleSaveNotes() {
     setNotesSaving(true);
@@ -211,11 +215,44 @@ export function MainPageClient({ cats }: { cats: Cat[] }) {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="rounded-xl border border-black/[.08] p-4 text-sm dark:border-white/[.145]">
-          <p className="text-zinc-500 dark:text-zinc-400">Total consumed</p>
-          <p className="text-2xl font-semibold">{totalMl.toFixed(0)} mL</p>
-          <p className="text-zinc-500 dark:text-zinc-400">
-            {calories.min.toFixed(0)}–{calories.max.toFixed(0)} calories
-          </p>
+          <div className="flex gap-6">
+            <div>
+              <p className="text-zinc-500 dark:text-zinc-400">Total consumed</p>
+              <p className="flex items-center gap-1.5 text-2xl font-semibold">
+                {totalMl.toFixed(0)} mL
+                <span
+                  title={
+                    trendVsPrevDay === "up"
+                      ? "Up from previous day"
+                      : trendVsPrevDay === "down"
+                        ? "Down from previous day"
+                        : "Similar to previous day"
+                  }
+                  className={
+                    trendVsPrevDay === "up"
+                      ? "text-green-600 dark:text-green-400"
+                      : trendVsPrevDay === "down"
+                        ? "text-red-600 dark:text-red-400"
+                        : "text-zinc-400"
+                  }
+                >
+                  {trendVsPrevDay === "up" ? "↑" : trendVsPrevDay === "down" ? "↓" : "→"}
+                </span>
+              </p>
+              <p className="text-zinc-500 dark:text-zinc-400">
+                {calories.min.toFixed(0)}–{calories.max.toFixed(0)} calories
+              </p>
+            </div>
+            {showPrevDay && (
+              <div className="border-l border-black/[.08] pl-6 dark:border-white/[.145]">
+                <p className="text-zinc-500 dark:text-zinc-400">Previous</p>
+                <p className="text-2xl font-semibold">{prevTotalMl.toFixed(0)} mL</p>
+                <p className="text-zinc-500 dark:text-zinc-400">
+                  {prevCalories.min.toFixed(0)}–{prevCalories.max.toFixed(0)} calories
+                </p>
+              </div>
+            )}
+          </div>
         </div>
         <div className="rounded-xl border border-black/[.08] p-4 dark:border-white/[.145]">
           <label className="text-sm text-zinc-500 dark:text-zinc-400" htmlFor="day-notes">
